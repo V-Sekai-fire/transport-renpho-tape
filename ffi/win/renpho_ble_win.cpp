@@ -1,6 +1,6 @@
 // WinRT implementation of the BLE central for the RENPHO tape client (Windows).
 //
-// Built with MSVC as renpho_ble_win.dll (C++/WinRT, C++17). It is a DLL, not a
+// Built with MSVC as renpho_ble_win.dll (C++/WinRT, C++20). It is a DLL, not a
 // static library, so its C++ runtime and exception model stay out of the
 // MinGW-built Lean executable. The id of a peripheral is its Bluetooth address
 // as "AA:BB:CC:DD:EE:FF".
@@ -110,12 +110,12 @@ GattCharacteristic find_char(const char *svc, const char *chr, uint32_t ms) {
     for (auto const &c : res.Characteristics())
       if (uuid_eq(guid_str(c.Uuid()), chr)) return c;
   }
-  throw hresult_error(E_NOT_SET, L"characteristic not found (run discover first)");
+  throw hresult_error(HRESULT_FROM_WIN32(ERROR_NOT_FOUND), L"characteristic not found (run discover first)");
 }
 
-#define GUARD(body)                                                \
+#define GUARD(...)                                                 \
   try {                                                            \
-    body                                                           \
+    __VA_ARGS__                                                    \
   } catch (hresult_error const &e) {                               \
     put_err(err, errcap, to_string(e.message()));                  \
     return 1;                                                      \
