@@ -1,0 +1,31 @@
+[Unit]
+Description=RENPHO smart tape (R-Y001) Bluetooth LE reader
+Documentation=file:///opt/renpho-tape/README.md
+After=bluetooth.service
+Wants=bluetooth.service
+
+[Service]
+Type=simple
+ExecStart=/opt/renpho-tape/renpho-tape serve
+# The tape powers itself off and drops the link; `serve` reconnects by itself.
+# Restart covers a crash or an unplugged adapter.
+Restart=always
+RestartSec=5
+# One JSON object per line goes to the journal: journalctl -u renpho-tape -f -o cat
+StandardOutput=journal
+StandardError=journal
+# BlueZ is reached over the system D-Bus; no root and no extra capability needed
+# (the user must be allowed by /usr/share/dbus-1/system.d/bluetooth.conf, i.e. the
+# `bluetooth` group on Debian-family systems).
+DynamicUser=yes
+SupplementaryGroups=bluetooth
+Nice=10
+MemoryHigh=64M
+MemoryMax=128M
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

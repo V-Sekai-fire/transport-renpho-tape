@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.chibifire.renpho-tape</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/renpho-tape</string>
+    <string>serve</string>
+  </array>
+  <!-- A service: launchd restarts it. The tape sleeps and drops the link on its own;
+       `serve` reconnects without a restart. -->
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>10</integer>
+  <!-- CoreBluetooth needs the user's login session (Aqua) and Bluetooth permission. -->
+  <key>LimitLoadToSessionType</key><string>Aqua</string>
+  <key>ProcessType</key><string>Background</string>
+  <key>Nice</key><integer>10</integer>
+  <key>StandardOutPath</key><string>/tmp/renpho-tape.jsonl</string>
+  <key>StandardErrorPath</key><string>/tmp/renpho-tape.err</string>
+</dict>
+</plist>

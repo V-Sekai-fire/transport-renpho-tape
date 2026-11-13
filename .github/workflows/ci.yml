@@ -1,0 +1,76 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-latest, name: macos-arm64 }
+          - { os: ubuntu-latest, name: linux-x64 }
+          - { os: windows-latest, name: windows-x64 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: leanprover/lean-action@v1
+        with:
+          auto-config: false
+          use-github-cache: false
+
+      - name: Linux build
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libglib2.0-dev pkg-config
+          lake build -Kcflags="$(scripts/linux-flags.sh cflags)" -Klinklibs="$(scripts/linux-flags.sh libs)"
+
+      - name: macOS build
+        if: runner.os == 'macOS'
+        run: lake build
+
+      - name: Windows build
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          lake build
+          if errorlevel 1 exit /b 1
+
+      - name: Windows DLL (MSVC, C++/WinRT)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Windows DLL build
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: scripts\build-win-dll.bat
+
+      # No Bluetooth radio on a runner: this proves the binary starts and the
+      # protocol checks (`#guard` in RenphoTape/Protocol.lean) held at build time.
+      - name: Smoke
+        shell: bash
+        run: |
+          bin=.lake/build/bin/renpho-tape
+          [ -f "$bin.exe" ] && bin="$bin.exe"
+          out=$("$bin" 2>&1 || true)
+          echo "$out" | head -3
+          echo "$out" | grep -q "renpho-tape: Bluetooth LE client"
+
+      - name: No stray runtime dependencies
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = Linux ]; then ldd .lake/build/bin/renpho-tape; ! ldd .lake/build/bin/renpho-tape | grep 'not found'; else otool -L .lake/build/bin/renpho-tape; fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: renpho-tape-${{ matrix.name }}
+          path: |
+            .lake/build/bin/renpho-tape
+            .lake/build/bin/renpho-tape.exe
+            .lake/build/bin/renpho_ble_win.dll
