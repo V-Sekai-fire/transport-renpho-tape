@@ -37,10 +37,8 @@ jobs:
 
       - name: Windows build
         if: runner.os == 'Windows'
-        shell: cmd
-        run: |
-          lake build
-          if errorlevel 1 exit /b 1
+        shell: bash
+        run: lake build
 
       - name: Windows DLL (MSVC, C++/WinRT)
         if: runner.os == 'Windows'
